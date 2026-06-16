@@ -1,0 +1,32 @@
+<app-navbar />
+
+<div class="wiki-layout">
+  <div class="wiki-header">
+    <h2>Wiki 文档</h2>
+    <button class="create-btn" (click)="createDocument()">+ 新建文档</button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">加载中...</div>
+  }
+
+  <div class="document-list">
+    @for (doc of documents(); track doc.id) {
+      <div class="document-card" (click)="openDocument(doc.id)">
+        <div class="doc-info">
+          <h3 class="doc-title">{{ doc.title }}</h3>
+          <div class="doc-meta">
+            <span class="doc-author">{{ doc.author?.username || '未知' }}</span>
+            <span class="doc-time">{{ doc.updatedAt | date:'yyyy-MM-dd HH:mm' }}</span>
+          </div>
+        </div>
+        <button class="delete-btn" (click)="deleteDocument(doc.id, $event)" title="删除">🗑️</button>
+      </div>
+    }
+    @if (documents().length === 0 && !isLoading()) {
+      <div class="empty-state">
+        <p>暂无文档，点击上方按钮创建第一篇文档</p>
+      </div>
+    }
+  </div>
+</div>

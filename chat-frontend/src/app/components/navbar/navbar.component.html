@@ -1,0 +1,16 @@
+<nav class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/chat">AI 聊天助手</a>
+  </div>
+
+  <div class="navbar-links">
+    @if (currentUser$ | async; as user) {
+      <a routerLink="/wiki">Wiki</a>
+      @if (isAdmin(user)) {
+        <a routerLink="/admin/users">用户管理</a>
+      }
+      <span class="user-info">{{ user.username }}</span>
+      <button (click)="logout()" class="logout-btn">退出</button>
+    }
+  </div>
+</nav>

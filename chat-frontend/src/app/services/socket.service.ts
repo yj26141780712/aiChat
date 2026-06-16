@@ -1,25 +1,27 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
-
-/** 消息接口 */
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SocketService {
-  private socket: Socket;
+  private socket: Socket | null = null;
 
-  constructor() {
-    // 连接到 NestJS 后端 WebSocket
-    this.socket = io('http://localhost:3000');
+  constructor(private authService: AuthService) {}
+
+  /** 连接 WebSocket（需要在登录后调用） */
+  connect(): void {
+    const token = this.authService.getAccessToken();
+    if (!token) return;
+
+    this.socket = io('http://localhost:3000', {
+      auth: { token },
+    });
 
     this.socket.on('connect', () => {
-      console.log('WebSocket 已连接, ID:', this.socket.id);
+      console.log('WebSocket 已连接');
     });
 
     this.socket.on('disconnect', () => {
@@ -27,63 +29,101 @@ export class SocketService {
     });
   }
 
+  /** 断开 WebSocket */
+  disconnect(): void {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+
   /** 发送用户消息 */
-  sendMessage(message: string): void {
-    this.socket.emit('user_message', { message });
+  sendMessage(message: string, conversationId?: string): void {
+    this.socket?.emit('user_message', { message, conversationId });
+  }
+
+  /** 设置当前对话 */
+  setConversation(conversationId: string): void {
+    this.socket?.emit('set_conversation', { conversationId });
+  }
+
+  /** 创建新对话 */
+  createConversation(): void {
+    this.socket?.emit('create_conversation');
   }
 
   /** 监听流式内容块 */
-  onStreamChunk(): Observable<{ content: string }> {
+  onStreamChunk(): Observable<{ content: string; conversationId: string }> {
     return new Observable((observer) => {
-      this.socket.on('stream_chunk', (data: { content: string }) => {
+      this.socket?.on('stream_chunk', (data: { content: string; conversationId: string }) => {
         observer.next(data);
       });
-      return () => this.socket.off('stream_chunk');
+      return () => this.socket?.off('stream_chunk');
+    });
+  }
+
+  /** 监听流式思考内容 */
+  onStreamThinking(): Observable<{ content: string; conversationId: string }> {
+    return new Observable((observer) => {
+      this.socket?.on('stream_thinking', (data: { content: string; conversationId: string }) => {
+        observer.next(data);
+      });
+      return () => this.socket?.off('stream_thinking');
     });
   }
 
   /** 监听流式结束 */
-  onStreamDone(): Observable<{ fullReply: string }> {
+  onStreamDone(): Observable<{ fullReply: string; conversationId: string }> {
     return new Observable((observer) => {
-      this.socket.on('stream_done', (data: { fullReply: string }) => {
+      this.socket?.on('stream_done', (data: { fullReply: string; conversationId: string }) => {
         observer.next(data);
       });
-      return () => this.socket.off('stream_done');
+      return () => this.socket?.off('stream_done');
     });
   }
 
   /** 监听错误 */
-  onStreamError(): Observable<{ message: string }> {
+  onStreamError(): Observable<{ message: string; conversationId?: string }> {
     return new Observable((observer) => {
-      this.socket.on('stream_error', (data: { message: string }) => {
+      this.socket?.on('stream_error', (data: { message: string; conversationId?: string }) => {
         observer.next(data);
       });
-      return () => this.socket.off('stream_error');
+      return () => this.socket?.off('stream_error');
     });
   }
 
   /** 监听对话创建 */
   onConversationCreated(): Observable<{ conversationId: string }> {
     return new Observable((observer) => {
-      this.socket.on('conversation_created', (data: { conversationId: string }) => {
+      this.socket?.on('conversation_created', (data: { conversationId: string }) => {
         observer.next(data);
       });
-      return () => this.socket.off('conversation_created');
+      return () => this.socket?.off('conversation_created');
     });
   }
 
   /** 监听标题更新 */
-  onTitleUpdated(): Observable<{ title: string }> {
+  onTitleUpdated(): Observable<{ title: string; conversationId: string }> {
     return new Observable((observer) => {
-      this.socket.on('title_updated', (data: { title: string }) => {
+      this.socket?.on('title_updated', (data: { title: string; conversationId: string }) => {
         observer.next(data);
       });
-      return () => this.socket.off('title_updated');
+      return () => this.socket?.off('title_updated');
     });
   }
 
-  /** 获取当前 socket ID */
-  getSocketId(): string | undefined {
-    return this.socket.id;
+  /** 监听连接成功 */
+  onConnected(): Observable<{ userId: string; username: string }> {
+    return new Observable((observer) => {
+      this.socket?.on('connected', (data: { userId: string; username: string }) => {
+        observer.next(data);
+      });
+      return () => this.socket?.off('connected');
+    });
+  }
+
+  /** 获取当前用户 ID */
+  getUserId(): string | null {
+    return this.authService.getCurrentUser()?.id || null;
   }
 }

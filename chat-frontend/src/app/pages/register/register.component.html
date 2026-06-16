@@ -1,0 +1,42 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>注册</h2>
+
+    @if (error()) {
+      <div class="error-message">{{ error() }}</div>
+    }
+    @if (success()) {
+      <div class="success-message">{{ success() }}</div>
+    }
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" placeholder="your@email.com" required />
+      </div>
+
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" [ngModel]="username()" (ngModelChange)="username.set($event)" name="username" placeholder="2-50 个字符" required />
+      </div>
+
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" placeholder="至少 6 位" required />
+      </div>
+
+      <div class="form-group">
+        <label>确认密码</label>
+        <input type="password" [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" name="confirmPassword" placeholder="再次输入密码" required />
+      </div>
+
+      <button type="submit" [disabled]="isLoading()" class="submit-btn">
+        {{ isLoading() ? '注册中...' : '注册' }}
+      </button>
+    </form>
+
+    <div class="auth-links">
+      <a routerLink="/login">已有账号？登录</a>
+    </div>
+  </div>
+</div>

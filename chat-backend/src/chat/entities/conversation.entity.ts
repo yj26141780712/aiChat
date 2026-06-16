@@ -5,15 +5,21 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
 } from 'typeorm';
 import { Message } from './message.entity';
+import { User } from '../../auth/entities/user.entity';
 
 @Entity('conversations')
 export class Conversation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  /** 用户标识（当前用 socket ID，后续可改为用户 ID） */
+  /** 关联用户 */
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  user: User;
+
+  /** 用户ID（外键） */
   @Column()
   userId: string;
 

@@ -61,4 +61,16 @@ export class HistoryService {
   async updateTitle(conversationId: string, title: string): Promise<void> {
     await this.conversationRepo.update(conversationId, { title });
   }
+
+  /** 删除单个对话（级联删除消息） */
+  async deleteConversation(conversationId: string, userId: string): Promise<boolean> {
+    const result = await this.conversationRepo.delete({ id: conversationId, userId });
+    return (result.affected ?? 0) > 0;
+  }
+
+  /** 清空用户所有对话（级联删除消息） */
+  async deleteAllConversations(userId: string): Promise<number> {
+    const result = await this.conversationRepo.delete({ userId });
+    return result.affected ?? 0;
+  }
 }

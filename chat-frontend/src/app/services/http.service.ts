@@ -27,9 +27,9 @@ export class HttpService {
 
   constructor(private http: HttpClient) {}
 
-  /** 获取用户的对话列表 */
-  getConversations(userId: string): Observable<ConversationItem[]> {
-    return this.http.get<ConversationItem[]>(`${this.baseUrl}?userId=${userId}`);
+  /** 获取当前用户的对话列表 */
+  getConversations(): Observable<ConversationItem[]> {
+    return this.http.get<ConversationItem[]>(this.baseUrl);
   }
 
   /** 获取某个对话的消息列表 */
@@ -37,5 +37,20 @@ export class HttpService {
     return this.http.get<MessageRecord[]>(
       `${this.baseUrl}/${conversationId}/messages`,
     );
+  }
+
+  /** 重命名对话 */
+  renameConversation(conversationId: string, title: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/${conversationId}`, { title });
+  }
+
+  /** 删除单个对话 */
+  deleteConversation(conversationId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${conversationId}`);
+  }
+
+  /** 清空所有对话 */
+  deleteAllConversations(): Observable<any> {
+    return this.http.delete(this.baseUrl);
   }
 }

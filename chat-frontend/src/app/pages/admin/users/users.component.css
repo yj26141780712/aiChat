@@ -1,0 +1,78 @@
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.users-table th,
+.users-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.users-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  font-size: 13px;
+  color: #666;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: #e0e0e0;
+}
+
+.badge.admin {
+  background: #ffd700;
+  color: #333;
+}
+
+.badge.active {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.badge.inactive {
+  background: #ffcdd2;
+  color: #c62828;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  margin-right: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.action-btn:hover {
+  background: #f5f5f5;
+}
+
+.action-btn.danger {
+  color: #c62828;
+  border-color: #ffcdd2;
+}
+
+.action-btn.danger:hover {
+  background: #ffebee;
+}

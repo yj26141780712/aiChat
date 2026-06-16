@@ -1,0 +1,36 @@
+<app-navbar />
+
+<div class="editor-layout">
+  <!-- 顶部工具栏 -->
+  <div class="editor-toolbar">
+    <button class="back-btn" (click)="goBack()">← 返回</button>
+    <input
+      class="title-input"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event); onContentChange()"
+      placeholder="文档标题"
+    />
+    <button class="save-btn" (click)="save()" [disabled]="isSaving()">
+      {{ isSaving() ? '保存中...' : '保存' }}
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading">加载中...</div>
+  } @else {
+    <!-- 编辑区：左编辑 + 右预览 -->
+    <div class="editor-split">
+      <div class="editor-pane">
+        <textarea
+          class="editor-textarea"
+          [ngModel]="content()"
+          (ngModelChange)="content.set($event); onContentChange()"
+          placeholder="在此输入 Markdown 内容..."
+        ></textarea>
+      </div>
+      <div class="preview-pane">
+        <div class="markdown-body" [innerHTML]="previewHtml"></div>
+      </div>
+    </div>
+  }
+</div>

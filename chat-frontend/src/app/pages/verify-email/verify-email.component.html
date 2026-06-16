@@ -1,0 +1,18 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>邮箱验证</h2>
+
+    @if (status() === 'loading') {
+      <div class="info-message">正在验证...</div>
+    }
+    @if (status() === 'success') {
+      <div class="success-message">{{ message() }}</div>
+      <div class="auth-links">
+        <a routerLink="/login">前往登录</a>
+      </div>
+    }
+    @if (status() === 'error') {
+      <div class="error-message">{{ message() }}</div>
+    }
+  </div>
+</div>

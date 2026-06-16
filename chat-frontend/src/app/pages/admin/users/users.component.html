@@ -1,0 +1,51 @@
+<app-navbar />
+
+<div class="page-container">
+  <h2>用户管理</h2>
+
+  @if (isLoading()) {
+    <p>加载中...</p>
+  } @else {
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>邮箱</th>
+          <th>角色</th>
+          <th>状态</th>
+          <th>邮箱验证</th>
+          <th>注册时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>
+              <span class="badge" [class.admin]="user.role === 'admin'">
+                {{ user.role }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+                {{ user.isActive ? '启用' : '禁用' }}
+              </span>
+            </td>
+            <td>{{ user.emailVerified ? '✓' : '✗' }}</td>
+            <td>{{ user.createdAt | date:'yyyy-MM-dd' }}</td>
+            <td>
+              <button class="action-btn" (click)="changeRole(user)">
+                {{ user.role === 'admin' ? '设为用户' : '设为管理员' }}
+              </button>
+              <button class="action-btn danger" (click)="toggleStatus(user)">
+                {{ user.isActive ? '禁用' : '启用' }}
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
