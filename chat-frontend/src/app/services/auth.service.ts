@@ -38,11 +38,12 @@ export class AuthService {
   }
 
   /** 注册 */
-  register(email: string, password: string, username: string): Observable<any> {
+  register(email: string, password: string, username: string, invitationCode: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/register`, {
       email,
       password,
       username,
+      invitationCode,
     });
   }
 

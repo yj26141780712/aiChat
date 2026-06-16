@@ -1,0 +1,95 @@
+<app-navbar />
+
+<div class="page-container">
+  <h2>邀请码管理</h2>
+
+  <!-- 创建邀请码表单 -->
+  <div class="create-form">
+    <h3>创建邀请码</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>类型</label>
+        <select [ngModel]="codeType()" (ngModelChange)="codeType.set($event)" name="codeType">
+          <option value="once">一次性</option>
+          <option value="multiple">可复用</option>
+        </select>
+      </div>
+
+      @if (codeType() === 'multiple') {
+        <div class="form-group">
+          <label>最大使用次数（0=无限）</label>
+          <input type="number" [ngModel]="maxUses()" (ngModelChange)="maxUses.set($event)" name="maxUses" min="0" />
+        </div>
+      }
+
+      <div class="form-group">
+        <label>自定义邀请码（留空则随机生成）</label>
+        <input type="text" [ngModel]="customCode()" (ngModelChange)="customCode.set($event)" name="customCode" placeholder="可选" />
+      </div>
+
+      <div class="form-group">
+        <label>批量生成数量</label>
+        <input type="number" [ngModel]="batchCount()" (ngModelChange)="batchCount.set($event)" name="batchCount" min="1" max="100" />
+      </div>
+
+      <div class="form-group">
+        <label>过期时间（可选）</label>
+        <input type="datetime-local" [ngModel]="expiresAt()" (ngModelChange)="expiresAt.set($event)" name="expiresAt" />
+      </div>
+
+      <div class="form-group form-btn">
+        <button class="create-btn" (click)="createCode()">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 邀请码列表 -->
+  @if (isLoading()) {
+    <p>加载中...</p>
+  } @else {
+    <table class="codes-table">
+      <thead>
+        <tr>
+          <th>邀请码</th>
+          <th>类型</th>
+          <th>使用情况</th>
+          <th>状态</th>
+          <th>过期时间</th>
+          <th>创建者</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (code of codes(); track code.id) {
+          <tr [class.disabled]="!code.isActive">
+            <td class="code-cell">
+              <code>{{ code.code }}</code>
+              <button class="copy-btn" (click)="copyCode(code.code)" title="复制">📋</button>
+            </td>
+            <td>
+              <span class="badge" [class.once]="code.type === 'once'" [class.multiple]="code.type === 'multiple'">
+                {{ code.type === 'once' ? '一次性' : '可复用' }}
+              </span>
+            </td>
+            <td>{{ code.usedCount }} / {{ code.type === 'once' ? '1' : (code.maxUses === 0 ? '∞' : code.maxUses) }}</td>
+            <td>
+              <span class="badge" [class.active]="code.isActive" [class.inactive]="!code.isActive">
+                {{ code.isActive ? '启用' : '禁用' }}
+              </span>
+            </td>
+            <td>{{ code.expiresAt ? (code.expiresAt | date:'yyyy-MM-dd HH:mm') : '永久' }}</td>
+            <td>{{ code.createdBy.username || '-' }}</td>
+            <td>{{ code.createdAt | date:'yyyy-MM-dd HH:mm' }}</td>
+            <td>
+              <button class="action-btn" (click)="toggleStatus(code)">
+                {{ code.isActive ? '禁用' : '启用' }}
+              </button>
+              <button class="action-btn danger" (click)="deleteCode(code)">删除</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

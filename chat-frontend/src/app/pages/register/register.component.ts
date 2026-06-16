@@ -15,6 +15,7 @@ export class RegisterComponent {
   username = signal('');
   password = signal('');
   confirmPassword = signal('');
+  invitationCode = signal('');
   error = signal('');
   success = signal('');
   isLoading = signal(false);
@@ -22,7 +23,7 @@ export class RegisterComponent {
   constructor(private authService: AuthService) {}
 
   onSubmit(): void {
-    if (!this.email() || !this.username() || !this.password()) {
+    if (!this.email() || !this.username() || !this.password() || !this.invitationCode()) {
       this.error.set('请填写所有字段');
       return;
     }
@@ -35,7 +36,7 @@ export class RegisterComponent {
     this.isLoading.set(true);
     this.error.set('');
 
-    this.authService.register(this.email(), this.password(), this.username()).subscribe({
+    this.authService.register(this.email(), this.password(), this.username(), this.invitationCode()).subscribe({
       next: (res) => {
         this.success.set(res.message || '注册成功！请查收验证邮件');
         this.isLoading.set(false);

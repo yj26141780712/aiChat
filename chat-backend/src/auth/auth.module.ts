@@ -9,11 +9,13 @@ import { AdminController } from './admin.controller';
 import { User } from './entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { MailService } from '../common/mail.service';
+import { InvitationCodeModule } from '../invitation-code/invitation-code.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    InvitationCodeModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

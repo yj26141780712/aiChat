@@ -14,6 +14,8 @@ import { User } from './auth/entities/user.entity';
 import { Document } from './wiki/entities/document.entity';
 import { KnowledgeDocument } from './knowledge/entities/knowledge-document.entity';
 import { KnowledgeChunk } from './knowledge/entities/knowledge-chunk.entity';
+import { InvitationCode } from './invitation-code/entities/invitation-code.entity';
+import { InvitationCodeModule } from './invitation-code/invitation-code.module';
 
 @Module({
   imports: [
@@ -30,7 +32,7 @@ import { KnowledgeChunk } from './knowledge/entities/knowledge-chunk.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_DATABASE'),
-        entities: [User, Conversation, Message, Document, KnowledgeDocument, KnowledgeChunk],
+        entities: [User, Conversation, Message, Document, KnowledgeDocument, KnowledgeChunk, InvitationCode],
         synchronize: true,
         dropSchema: false,
       }),
@@ -39,6 +41,7 @@ import { KnowledgeChunk } from './knowledge/entities/knowledge-chunk.entity';
     ChatModule,
     WikiModule,
     KnowledgeModule,
+    InvitationCodeModule,
   ],
   controllers: [AppController],
   providers: [

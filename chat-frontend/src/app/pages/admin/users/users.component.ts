@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { environment } from '../../../../environments/environment';
 
 interface UserItem {
   id: string;
@@ -25,7 +26,7 @@ export class UsersComponent implements OnInit {
   users = signal<UserItem[]>([]);
   isLoading = signal(false);
 
-  private baseUrl = 'http://localhost:3000/admin/users';
+  private baseUrl = `${environment.apiBase}/admin/users`;
 
   constructor(private http: HttpClient) {}
 

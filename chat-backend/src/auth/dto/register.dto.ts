@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail({}, { message: '请输入有效的邮箱地址' })
@@ -13,4 +13,8 @@ export class RegisterDto {
   @MinLength(2, { message: '用户名至少 2 个字符' })
   @MaxLength(50)
   username: string;
+
+  @IsString()
+  @IsNotEmpty({ message: '请输入邀请码' })
+  invitationCode: string;
 }

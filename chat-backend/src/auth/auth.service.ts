@@ -15,6 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { MailService } from '../common/mail.service';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { InvitationCodeService } from '../invitation-code/invitation-code.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private jwtService: JwtService,
     private config: ConfigService,
     private mailService: MailService,
+    private invitationCodeService: InvitationCodeService,
   ) {}
 
   /** 注册 */
@@ -51,6 +53,15 @@ export class AuthService {
     });
 
     await this.userRepo.save(user);
+
+    // 验证并使用邀请码（用户创建后验证，失败则回滚禁用用户）
+    try {
+      await this.invitationCodeService.validateAndUse(dto.invitationCode, user.id);
+    } catch (err) {
+      // 邀请码无效，禁用已创建的用户
+      await this.userRepo.update(user.id, { isActive: false });
+      throw err;
+    }
 
     // 发送验证邮件（异步，不阻塞注册响应）
     this.mailService.sendVerifyEmail(user.email, emailVerifyToken).catch((err) => {

@@ -9,6 +9,7 @@
       <a routerLink="/knowledge">知识库</a>
       @if (isAdmin(user)) {
         <a routerLink="/admin/users">用户管理</a>
+        <a routerLink="/admin/invitation-codes">邀请码</a>
       }
       <span class="user-info">{{ user.username }}</span>
       <button (click)="logout()" class="logout-btn">退出</button>

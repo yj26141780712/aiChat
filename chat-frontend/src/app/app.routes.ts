@@ -38,6 +38,11 @@ export const routes: Routes = [
     canActivate: [authGuard, adminGuard],
   },
   {
+    path: 'admin/invitation-codes',
+    loadComponent: () => import('./pages/admin/invitation-codes/invitation-codes.component').then(m => m.InvitationCodesComponent),
+    canActivate: [authGuard, adminGuard],
+  },
+  {
     path: 'wiki',
     loadComponent: () => import('./pages/wiki/wiki-list/wiki-list.component').then(m => m.WikiListComponent),
     canActivate: [authGuard],
