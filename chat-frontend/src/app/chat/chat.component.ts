@@ -51,7 +51,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     console.log(`RAG enabled: ${next}`);
   }
 
-  /** 正在重命名的对话 ID */
+  /** 侧边栏是否展开（移动端可收起） */
+  sidebarOpen = signal(true);
+
+  /** 是否正在重命名的对话 ID */
   editingConversationId = signal<string | null>(null);
   /** 重命名输入框的值 */
   editingTitle = signal<string>('');

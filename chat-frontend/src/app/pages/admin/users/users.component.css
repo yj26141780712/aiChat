@@ -76,3 +76,26 @@ h2 {
 .action-btn.danger:hover {
   background: #ffebee;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .users-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}

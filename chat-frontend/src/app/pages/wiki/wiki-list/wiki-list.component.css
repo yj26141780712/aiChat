@@ -117,3 +117,37 @@
   padding: 60px 20px;
   font-size: 15px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .wiki-layout {
+    padding: 16px;
+  }
+
+  .wiki-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .wiki-header h2 {
+    font-size: 18px;
+  }
+
+  .document-card {
+    padding: 12px 14px;
+  }
+
+  .doc-title {
+    font-size: 14px;
+  }
+
+  .doc-meta {
+    font-size: 11px;
+    gap: 8px;
+  }
+
+  /* 移动端始终显示删除按钮 */
+  .delete-btn {
+    opacity: 1;
+  }
+}

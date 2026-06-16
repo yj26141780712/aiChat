@@ -3,13 +3,17 @@
     <a routerLink="/chat">AI 聊天助手</a>
   </div>
 
-  <div class="navbar-links">
+  <button class="hamburger" (click)="toggleMenu()" [class.open]="menuOpen()">
+    <span></span><span></span><span></span>
+  </button>
+
+  <div class="navbar-links" [class.open]="menuOpen()">
     @if (currentUser$ | async; as user) {
-      <a routerLink="/wiki">Wiki</a>
-      <a routerLink="/knowledge">知识库</a>
+      <a routerLink="/wiki" (click)="menuOpen.set(false)">Wiki</a>
+      <a routerLink="/knowledge" (click)="menuOpen.set(false)">知识库</a>
       @if (isAdmin(user)) {
-        <a routerLink="/admin/users">用户管理</a>
-        <a routerLink="/admin/invitation-codes">邀请码</a>
+        <a routerLink="/admin/users" (click)="menuOpen.set(false)">用户管理</a>
+        <a routerLink="/admin/invitation-codes" (click)="menuOpen.set(false)">邀请码</a>
       }
       <span class="user-info">{{ user.username }}</span>
       <button (click)="logout()" class="logout-btn">退出</button>

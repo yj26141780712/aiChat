@@ -202,3 +202,48 @@
   background: #e53935;
   color: #fff;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .knowledge-layout {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .knowledge-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .knowledge-header h2 {
+    font-size: 18px;
+  }
+
+  .upload-area {
+    padding: 24px 16px;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+  }
+
+  .upload-text {
+    font-size: 14px;
+  }
+
+  .doc-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .doc-actions {
+    margin-left: 0;
+  }
+
+  .doc-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

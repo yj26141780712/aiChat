@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService, UserInfo } from '../../services/auth.service';
 import { AsyncPipe } from '@angular/common';
@@ -12,9 +12,14 @@ import { AsyncPipe } from '@angular/common';
 })
 export class NavbarComponent {
   currentUser$;
+  menuOpen = signal(false);
 
   constructor(private authService: AuthService) {
     this.currentUser$ = this.authService.currentUser$;
+  }
+
+  toggleMenu(): void {
+    this.menuOpen.update(v => !v);
   }
 
   logout(): void {

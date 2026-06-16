@@ -1,11 +1,17 @@
 <app-navbar />
 
 <div class="chat-layout">
+  <!-- 移动端侧边栏遮罩 -->
+  @if (sidebarOpen()) {
+    <div class="sidebar-overlay" (click)="sidebarOpen.set(false)"></div>
+  }
+
   <!-- 左侧对话列表 -->
-  <div class="sidebar">
+  <div class="sidebar" [class.open]="sidebarOpen()">
     <div class="sidebar-header">
       <div class="sidebar-title-row">
         <h3>对话历史</h3>
+        <button class="sidebar-close-btn" (click)="sidebarOpen.set(false)">✕</button>
         @if (conversations().length > 0) {
           <button class="clear-all-btn" (click)="deleteAllConversations()" title="清空所有对话">🗑️</button>
         }
@@ -17,7 +23,7 @@
         <div
           class="conversation-item"
           [class.active]="conv.id === currentConversationId()"
-          (click)="editingConversationId() !== conv.id && loadConversation(conv.id)"
+          (click)="editingConversationId() !== conv.id && loadConversation(conv.id); sidebarOpen.set(false)"
         >
           @if (editingConversationId() === conv.id) {
             <!-- 重命名模式 -->
@@ -58,6 +64,7 @@
   <div class="chat-container">
     <!-- 头部 -->
     <div class="chat-header">
+      <button class="sidebar-toggle-btn" (click)="sidebarOpen.update(v => !v)">☰</button>
       <h2>{{ currentTitle() }}</h2>
     </div>
 
