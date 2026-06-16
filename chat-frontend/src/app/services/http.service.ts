@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 /** 对话列表项 */
 export interface ConversationItem {
@@ -23,7 +24,7 @@ export interface MessageRecord {
   providedIn: 'root',
 })
 export class HttpService {
-  private baseUrl = 'http://localhost:3000/api/history';
+  private baseUrl = `${environment.apiBase}/api/history`;
 
   constructor(private http: HttpClient) {}
 

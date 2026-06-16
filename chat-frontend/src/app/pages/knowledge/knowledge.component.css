@@ -1,0 +1,204 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.knowledge-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px;
+  overflow-y: auto;
+  gap: 20px;
+}
+
+.knowledge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.knowledge-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #333;
+}
+
+.index-wiki-btn {
+  padding: 8px 16px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.index-wiki-btn:hover:not(:disabled) {
+  background: #357abd;
+}
+
+.index-wiki-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 上传区域 */
+.upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fafafa;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+  border-color: #4a90d9;
+  background: #f0f6ff;
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+  color: #555;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 文档列表 */
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 14px;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  transition: box-shadow 0.2s;
+}
+
+.doc-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.doc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #888;
+}
+
+.doc-source {
+  padding: 1px 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.doc-source.wiki {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.doc-type {
+  padding: 1px 6px;
+  background: #f3e5f5;
+  color: #7b1fa2;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.doc-status {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.doc-status.ready {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.doc-status.processing {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.doc-status.error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.doc-date {
+  color: #aaa;
+  font-size: 11px;
+}
+
+.doc-error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #c62828;
+}
+
+.doc-actions {
+  margin-left: 12px;
+}
+
+.delete-btn {
+  padding: 4px 12px;
+  background: none;
+  color: #e53935;
+  border: 1px solid #e53935;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.delete-btn:hover {
+  background: #e53935;
+  color: #fff;
+}

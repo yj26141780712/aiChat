@@ -7,10 +7,13 @@ import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 import { WikiModule } from './wiki/wiki.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
 import { Conversation } from './chat/entities/conversation.entity';
 import { Message } from './chat/entities/message.entity';
 import { User } from './auth/entities/user.entity';
 import { Document } from './wiki/entities/document.entity';
+import { KnowledgeDocument } from './knowledge/entities/knowledge-document.entity';
+import { KnowledgeChunk } from './knowledge/entities/knowledge-chunk.entity';
 
 @Module({
   imports: [
@@ -27,7 +30,7 @@ import { Document } from './wiki/entities/document.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_DATABASE'),
-        entities: [User, Conversation, Message, Document],
+        entities: [User, Conversation, Message, Document, KnowledgeDocument, KnowledgeChunk],
         synchronize: true,
         dropSchema: false,
       }),
@@ -35,6 +38,7 @@ import { Document } from './wiki/entities/document.entity';
     AuthModule,
     ChatModule,
     WikiModule,
+    KnowledgeModule,
   ],
   controllers: [AppController],
   providers: [

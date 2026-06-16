@@ -6,6 +6,7 @@
   <div class="navbar-links">
     @if (currentUser$ | async; as user) {
       <a routerLink="/wiki">Wiki</a>
+      <a routerLink="/knowledge">知识库</a>
       @if (isAdmin(user)) {
         <a routerLink="/admin/users">用户管理</a>
       }

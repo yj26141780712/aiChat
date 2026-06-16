@@ -48,6 +48,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'knowledge',
+    loadComponent: () => import('./pages/knowledge/knowledge.component').then(m => m.KnowledgeComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: '**',
     redirectTo: 'chat',
   },

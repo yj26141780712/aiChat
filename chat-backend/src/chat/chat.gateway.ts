@@ -13,12 +13,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatService, ChatMessage } from './chat.service';
 import { HistoryService } from './history.service';
+import { KnowledgeService } from '../knowledge/knowledge.service';
 import { User } from '../auth/entities/user.entity';
 
 /** 用户消息的 payload 结构 */
 interface UserMessagePayload {
   message: string;
   conversationId?: string;
+  useRag?: boolean;
 }
 
 @WebSocketGateway({
@@ -39,6 +41,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly chatService: ChatService,
     private readonly historyService: HistoryService,
+    private readonly knowledgeService: KnowledgeService,
     private readonly jwtService: JwtService,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
@@ -119,7 +122,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: UserMessagePayload,
   ) {
-    const { message } = payload;
+    const { message, useRag } = payload;
     const user = this.socketUsers.get(client.id);
     // 优先使用消息中携带的 conversationId，实现多对话并行
     let conversationId = payload.conversationId || this.socketConversations.get(client.id);
@@ -164,6 +167,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           content: m.content,
         })),
       ];
+
+      // 2.5 RAG 检索增强：如果启用了知识库问答
+      if (useRag) {
+        try {
+          const searchResults = await this.knowledgeService.search(message, 3);
+          if (searchResults.length > 0) {
+            const ragContext = searchResults
+              .map((r) => `[${r.title}]\n${r.content}`)
+              .join('\n\n');
+            const ragPrompt = `你是一个知识库问答助手。请基于以下参考资料回答用户问题。\n如果参考资料中没有相关信息，请如实告知。\n\n--- 参考资料 ---\n${ragContext}\n--- 参考资料结束 ---`;
+            // 将 RAG 上下文插入到 system prompt 之后、历史消息之前
+            aiMessages.splice(
+              systemPrompt ? 1 : 0,
+              0,
+              { role: 'system' as const, content: ragPrompt },
+            );
+          }
+        } catch (err) {
+          this.server
+            .to(client.id)
+            .emit('stream_chunk', {
+              content: '\n\n[知识库检索失败，将基于自身知识回答]\n',
+              conversationId,
+            });
+        }
+      }
 
       // 3. 流式调用 AI，逐块推送
       const fullReply = await this.chatService.streamChat(

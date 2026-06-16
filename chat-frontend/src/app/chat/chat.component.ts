@@ -40,6 +40,17 @@ export class ChatComponent implements OnInit, OnDestroy {
   /** 后台流式内容缓冲区：conversationId -> 已收到的部分内容 */
   private streamingBuffers: Map<string, string> = new Map();
 
+  /** 是否启用知识库问答 (RAG) - 状态持久化到 localStorage */
+  useRag = signal<boolean>(localStorage.getItem('chat_use_rag') === 'true');
+
+  /** 切换知识库问答开关，并持久化状态 */
+  toggleRag(): void {
+    const next = !this.useRag();
+    this.useRag.set(next);
+    localStorage.setItem('chat_use_rag', String(next));
+    console.log(`RAG enabled: ${next}`);
+  }
+
   /** 正在重命名的对话 ID */
   editingConversationId = signal<string | null>(null);
   /** 重命名输入框的值 */
@@ -247,7 +258,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     this.scrollToBottom();
-    this.socketService.sendMessage(text, convId ?? undefined);
+    this.socketService.sendMessage(text, convId ?? undefined, this.useRag());
   }
 
   /** Enter 键发送 */

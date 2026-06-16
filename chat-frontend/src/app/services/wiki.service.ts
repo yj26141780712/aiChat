@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface WikiDocument {
   id: string;
@@ -16,7 +17,7 @@ export interface WikiDocument {
   providedIn: 'root',
 })
 export class WikiService {
-  private baseUrl = 'http://localhost:3000/api/wiki';
+  private baseUrl = `${environment.apiBase}/api/wiki`;
 
   constructor(private http: HttpClient) {}
 

@@ -114,6 +114,18 @@
       }
     </div>
 
+    <!-- RAG 知识库问答开关 -->
+    <div class="rag-toggle">
+      <label class="rag-switch">
+        <input type="checkbox" [checked]="useRag()" (click)="toggleRag()" />
+        <span class="rag-slider"></span>
+      </label>
+      <span class="rag-label" [class.active]="useRag()">知识库问答</span>
+      @if (useRag()) {
+        <span class="rag-badge">RAG</span>
+      }
+    </div>
+
     <!-- 输入区域 -->
     <div class="input-area">
       <textarea

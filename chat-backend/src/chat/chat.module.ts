@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { KnowledgeModule } from '../knowledge/knowledge.module';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { HistoryService } from './history.service';
@@ -13,6 +14,7 @@ import { User } from '../auth/entities/user.entity';
   imports: [
     TypeOrmModule.forFeature([Conversation, Message, User]),
     AuthModule,
+    KnowledgeModule,
   ],
   providers: [ChatGateway, ChatService, HistoryService],
   controllers: [HistoryController],

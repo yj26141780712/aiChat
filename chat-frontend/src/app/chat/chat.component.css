@@ -502,6 +502,77 @@
 }
 
 /* 输入区域 */
+/* RAG 知识库问答开关 */
+.rag-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px 0;
+  background: white;
+}
+
+.rag-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.rag-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.rag-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #ccc;
+  border-radius: 20px;
+  transition: 0.2s;
+}
+
+.rag-slider::before {
+  content: '';
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.rag-switch input:checked + .rag-slider {
+  background: #4a90d9;
+}
+
+.rag-switch input:checked + .rag-slider::before {
+  transform: translateX(16px);
+}
+
+.rag-label {
+  font-size: 13px;
+  color: #888;
+  user-select: none;
+}
+
+.rag-label.active {
+  color: #4a90d9;
+  font-weight: 500;
+}
+
+.rag-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  background: #4a90d9;
+  color: white;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
 .input-area {
   display: flex;
   gap: 10px;

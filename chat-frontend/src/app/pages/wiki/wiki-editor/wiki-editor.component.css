@@ -69,12 +69,74 @@
   background: #1557b0;
 }
 
+/* 保存状态指示器 */
+.save-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-indicator {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.save-indicator.saved { color: #34a853; }
+.save-indicator.saving { color: #fbbc04; }
+.save-indicator.unsaved { color: #ea4335; }
+
 .loading {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #999;
+}
+
+/* Markdown 格式化工具栏 */
+.format-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.format-group {
+  display: flex;
+  gap: 2px;
+}
+
+.format-divider {
+  width: 1px;
+  height: 20px;
+  background: #ddd;
+  margin: 0 6px;
+}
+
+.fmt-btn {
+  padding: 4px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.2;
+  min-width: 28px;
+  text-align: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.fmt-btn:hover {
+  background: #e8eaed;
+  border-color: #dadce0;
+}
+
+.fmt-btn:active {
+  background: #d2d4d7;
 }
 
 /* 左右分栏 */
@@ -105,6 +167,7 @@
   font-size: 14px;
   line-height: 1.6;
   box-sizing: border-box;
+  tab-size: 2;
 }
 
 .preview-pane {
@@ -197,4 +260,15 @@
   border: none;
   border-top: 1px solid #ddd;
   margin: 16px 0;
+}
+
+/* 底部状态栏 */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  font-size: 12px;
+  color: #999;
 }

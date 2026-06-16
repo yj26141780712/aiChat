@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +17,7 @@ export class SocketService {
     const token = this.authService.getAccessToken();
     if (!token) return;
 
-    this.socket = io('http://localhost:3000', {
+    this.socket = io(environment.apiBase || window.location.origin, {
       auth: { token },
     });
 
@@ -38,8 +39,8 @@ export class SocketService {
   }
 
   /** 发送用户消息 */
-  sendMessage(message: string, conversationId?: string): void {
-    this.socket?.emit('user_message', { message, conversationId });
+  sendMessage(message: string, conversationId?: string, useRag?: boolean): void {
+    this.socket?.emit('user_message', { message, conversationId, useRag });
   }
 
   /** 设置当前对话 */

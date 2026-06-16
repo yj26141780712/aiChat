@@ -1,0 +1,73 @@
+<app-navbar />
+
+<div class="knowledge-layout">
+  <div class="knowledge-header">
+    <h2>知识库管理</h2>
+    <div class="header-actions">
+      <button class="index-wiki-btn" (click)="indexWiki()" [disabled]="isIndexing()">
+        {{ isIndexing() ? '索引中...' : '同步 Wiki 文档' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- 上传区域 -->
+  <div
+    class="upload-area"
+    [class.drag-over]="dragOver()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave()"
+    (drop)="onDrop($event)"
+    (click)="fileInput.click()"
+  >
+    <input
+      #fileInput
+      type="file"
+      multiple
+      accept=".txt,.md,.pdf"
+      (change)="onFileSelect($event)"
+      hidden
+    />
+    <div class="upload-icon">📄</div>
+    <div class="upload-text">
+      @if (isUploading()) {
+        <span>上传中...</span>
+      } @else {
+        <span>拖拽文件到此处，或点击上传</span>
+        <span class="upload-hint">支持 .txt .md .pdf 格式，单文件最大 20MB</span>
+      }
+    </div>
+  </div>
+
+  <!-- 文档列表 -->
+  <div class="doc-list">
+    @if (documents().length === 0) {
+      <div class="empty-state">知识库为空，请上传文档或同步 Wiki</div>
+    }
+
+    @for (doc of documents(); track doc.id) {
+      <div class="doc-item">
+        <div class="doc-info">
+          <div class="doc-title">{{ doc.title }}</div>
+          <div class="doc-meta">
+            <span class="doc-source" [class.wiki]="doc.sourceType === 'wiki'">
+              {{ sourceLabel(doc.sourceType) }}
+            </span>
+            @if (doc.fileType) {
+              <span class="doc-type">{{ doc.fileType | uppercase }}</span>
+            }
+            <span class="doc-status" [class]="doc.status">
+              {{ statusLabel(doc.status) }}
+            </span>
+            <span class="doc-date">{{ doc.createdAt | date:'yyyy-MM-dd HH:mm' }}</span>
+          </div>
+          @if (doc.status === 'error' && doc.errorMessage) {
+            <div class="doc-error">{{ doc.errorMessage }}</div>
+          }
+        </div>
+        <div class="doc-actions">
+          <button class="delete-btn" (click)="deleteDocument(doc.id)">删除</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

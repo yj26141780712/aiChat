@@ -1,0 +1,46 @@
+services:
+  mysql:
+    image: mysql:8.0.21
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: your-strong-password
+      MYSQL_DATABASE: chat_app
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./chat-backend
+    restart: always
+    env_file: ./chat-backend/.env.docker
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-net
+
+  frontend:
+    build: ./chat-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+volumes:
+  mysql_data:
+  uploads_data:
+
+networks:
+  app-net:
+    driver: bridge

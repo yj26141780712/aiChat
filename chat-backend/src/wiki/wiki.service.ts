@@ -1,14 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from './entities/document.entity';
 import { CreateDocumentDto, UpdateDocumentDto } from './dto/create-document.dto';
+import { KnowledgeService } from '../knowledge/knowledge.service';
 
 @Injectable()
 export class WikiService {
   constructor(
     @InjectRepository(Document)
     private documentRepo: Repository<Document>,
+    @Inject(forwardRef(() => KnowledgeService))
+    private knowledgeService: KnowledgeService,
   ) {}
 
   /** 获取文档列表（按更新时间倒序） */
@@ -47,7 +50,12 @@ export class WikiService {
       content: dto.content || '',
       authorId,
     });
-    return this.documentRepo.save(doc);
+    const saved = await this.documentRepo.save(doc);
+    // 异步索引到知识库
+    this.knowledgeService.indexWikiDocument(saved.id, saved.title, saved.content).catch(err => {
+      console.error('Wiki 自动索引失败:', err.message);
+    });
+    return saved;
   }
 
   /** 更新文档 */
@@ -55,7 +63,12 @@ export class WikiService {
     const doc = await this.findOne(id);
     if (dto.title !== undefined) doc.title = dto.title;
     if (dto.content !== undefined) doc.content = dto.content;
-    return this.documentRepo.save(doc);
+    const saved = await this.documentRepo.save(doc);
+    // 异步重新索引
+    this.knowledgeService.indexWikiDocument(saved.id, saved.title, saved.content).catch(err => {
+      console.error('Wiki 自动索引失败:', err.message);
+    });
+    return saved;
   }
 
   /** 删除文档 */
