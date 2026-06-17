@@ -16,6 +16,7 @@ export interface MessageRecord {
   id: string;
   role: string;
   content: string;
+  images?: string[] | null;
   createdAt: string;
   conversationId: string;
 }

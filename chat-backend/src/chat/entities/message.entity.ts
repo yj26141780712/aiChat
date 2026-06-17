@@ -20,6 +20,10 @@ export class Message {
   @Column({ type: 'text' })
   content: string;
 
+  /** 消息附带的图片 URL 列表 */
+  @Column({ type: 'simple-json', nullable: true })
+  images: string[] | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

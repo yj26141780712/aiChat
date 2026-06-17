@@ -6,6 +6,7 @@ import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { HistoryService } from './history.service';
 import { HistoryController } from './history.controller';
+import { ChatUploadController } from './chat-upload.controller';
 import { Conversation } from './entities/conversation.entity';
 import { Message } from './entities/message.entity';
 import { User } from '../auth/entities/user.entity';
@@ -17,6 +18,6 @@ import { User } from '../auth/entities/user.entity';
     KnowledgeModule,
   ],
   providers: [ChatGateway, ChatService, HistoryService],
-  controllers: [HistoryController],
+  controllers: [HistoryController, ChatUploadController],
 })
 export class ChatModule {}

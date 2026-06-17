@@ -65,9 +65,29 @@
           }
         </div>
         <div class="doc-actions">
+          <button class="preview-btn" (click)="openPreview(doc.id)" [disabled]="doc.status !== 'ready'">预览</button>
           <button class="delete-btn" (click)="deleteDocument(doc.id)">删除</button>
         </div>
       </div>
     }
   </div>
 </div>
+
+<!-- 预览弹窗 -->
+@if (previewVisible()) {
+  <div class="preview-overlay" (click)="closePreview()">
+    <div class="preview-modal" (click)="$event.stopPropagation()">
+      <div class="preview-header">
+        <h3>{{ previewTitle() }}</h3>
+        <button class="preview-close" (click)="closePreview()">✕</button>
+      </div>
+      <div class="preview-body">
+        @if (previewLoading()) {
+          <div class="preview-loading">加载中...</div>
+        } @else {
+          <pre class="preview-content">{{ previewContent() }}</pre>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -6,6 +6,7 @@ import { marked } from 'marked';
 import { SocketService } from '../services/socket.service';
 import { HttpService, ConversationItem } from '../services/http.service';
 import { NavbarComponent } from '../components/navbar/navbar.component';
+import { environment } from '../../environments/environment';
 
 /** 前端显示用的消息结构 */
 interface DisplayMessage {
@@ -16,6 +17,8 @@ interface DisplayMessage {
   thinkingContent?: string;
   /** 是否正在思考中 */
   isThinking?: boolean;
+  /** 消息附带的图片 URL 列表 */
+  images?: string[] | null;
 }
 
 @Component({
@@ -58,6 +61,13 @@ export class ChatComponent implements OnInit, OnDestroy {
   editingConversationId = signal<string | null>(null);
   /** 重命名输入框的值 */
   editingTitle = signal<string>('');
+
+  /** 待上传的图片文件列表 */
+  selectedImages = signal<File[]>([]);
+  /** 图片预览 URL 列表（与 selectedImages 一一对应） */
+  imagePreviews = signal<string[]>([]);
+  /** 是否正在上传图片 */
+  isUploading = signal(false);
 
   /** 当前对话是否正在流式回复 */
   get isCurrentStreaming(): boolean {
@@ -166,6 +176,7 @@ export class ChatComponent implements OnInit, OnDestroy {
         if (lastMsg && lastMsg.role === 'assistant' && lastMsg.isStreaming) {
           lastMsg.content = '⚠️ ' + data.message;
           lastMsg.isStreaming = false;
+          lastMsg.isThinking = false;
           this.messages.set([...msgs]);
         }
       }),
@@ -215,6 +226,7 @@ export class ChatComponent implements OnInit, OnDestroy {
         const displayMsgs: DisplayMessage[] = messages.map((m) => ({
           role: m.role as 'user' | 'assistant',
           content: m.content,
+          images: m.images,
         }));
         // 如果该对话正在后台流式，用缓冲区已积累的内容作为占位消息
         if (this.streamingConversations().has(conversationId)) {
@@ -240,14 +252,49 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   /** 发送消息 */
-  sendMessage(): void {
+  async sendMessage(): Promise<void> {
     const text = this.inputText().trim();
-    if (!text) return;
+    const images = this.selectedImages();
+    if (!text && images.length === 0) return;
     const convId = this.currentConversationId();
     // 只阻止当前对话正在流式时重复发送
     if (convId && this.streamingConversations().has(convId)) return;
 
-    this.messages.update((msgs) => [...msgs, { role: 'user', content: text }]);
+    // 上传图片获取 URL
+    let uploadedUrls: string[] = [];
+    if (images.length > 0) {
+      this.isUploading.set(true);
+      try {
+        for (const file of images) {
+          const formData = new FormData();
+          formData.append('file', file);
+          const res = await fetch(`${environment.apiBase}/api/chat/upload`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('chat_access_token')}`,
+            },
+            body: formData,
+          }).then(r => r.json());
+          uploadedUrls.push(res.url);
+        }
+      } catch (err) {
+        console.error('图片上传失败:', err);
+        this.isUploading.set(false);
+        return;
+      }
+      this.isUploading.set(false);
+    }
+
+    // 清除已选图片和预览
+    this.selectedImages.set([]);
+    this.imagePreviews.set([]);
+
+    // 显示用户消息（含图片）
+    this.messages.update((msgs) => [...msgs, {
+      role: 'user',
+      content: text,
+      images: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+    }]);
     this.messages.update((msgs) => [
       ...msgs,
       { role: 'assistant', content: '', isStreaming: true, isThinking: true, thinkingContent: '' },
@@ -261,7 +308,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     this.scrollToBottom();
-    this.socketService.sendMessage(text, convId ?? undefined, this.useRag());
+    this.socketService.sendMessage(text, convId ?? undefined, this.useRag(), uploadedUrls);
   }
 
   /** Enter 键发送 */
@@ -366,5 +413,70 @@ export class ChatComponent implements OnInit, OnDestroy {
       }
       return next;
     });
+  }
+
+  /** 选择图片文件 */
+  onFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    const files = Array.from(input.files);
+    // 最多 5 张
+    const remaining = 5 - this.selectedImages().length;
+    const toAdd = files.slice(0, remaining);
+
+    this.selectedImages.update(prev => [...prev, ...toAdd]);
+
+    // 生成预览 URL
+    for (const file of toAdd) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreviews.update(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    input.value = ''; // 允许重复选择同一文件
+  }
+
+  /** 粘贴图片（Ctrl+V） */
+  onPaste(event: ClipboardEvent): void {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      event.preventDefault(); // 阻止默认粘贴行为
+      const remaining = 5 - this.selectedImages().length;
+      const toAdd = imageFiles.slice(0, remaining);
+
+      this.selectedImages.update(prev => [...prev, ...toAdd]);
+
+      for (const file of toAdd) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.imagePreviews.update(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+
+  /** 移除已选图片 */
+  removeImage(index: number): void {
+    this.selectedImages.update(prev => prev.filter((_, i) => i !== index));
+    this.imagePreviews.update(prev => prev.filter((_, i) => i !== index));
+  }
+
+  /** 获取图片完整 URL */
+  getImageUrl(path: string): string {
+    if (path.startsWith('http')) return path;
+    return `${environment.apiBase}${path}`;
   }
 }

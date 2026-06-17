@@ -26,7 +26,7 @@ export class EmbeddingService {
     for (let i = 0; i < texts.length; i += batchSize) {
       const batch = texts.slice(i, i + batchSize);
       const res = await this.client.embeddings.create({
-        model: 'text-embedding-v3',
+        model: 'text-embedding-v4',
         input: batch,
         dimensions: 1024,
       } as any);

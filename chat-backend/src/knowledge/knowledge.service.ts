@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KnowledgeDocument } from './entities/knowledge-document.entity';
 import { KnowledgeChunk } from './entities/knowledge-chunk.entity';
+import { Document as WikiDocument } from '../wiki/entities/document.entity';
 import { EmbeddingService } from './embedding.service';
 import { ChunkingService } from './chunking.service';
 import * as fs from 'fs';
@@ -25,6 +26,8 @@ export class KnowledgeService {
     private docRepo: Repository<KnowledgeDocument>,
     @InjectRepository(KnowledgeChunk)
     private chunkRepo: Repository<KnowledgeChunk>,
+    @InjectRepository(WikiDocument)
+    private wikiDocRepo: Repository<WikiDocument>,
     private embeddingService: EmbeddingService,
     private chunkingService: ChunkingService,
   ) {}
@@ -34,6 +37,28 @@ export class KnowledgeService {
     return this.docRepo.find({
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /** 获取文档预览内容（拼接所有 chunks） */
+  async getPreview(id: string): Promise<{ title: string; content: string; sourceType: string }> {
+    const doc = await this.docRepo.findOne({ where: { id } });
+    if (!doc) throw new NotFoundException('知识库文档不存在');
+
+    // Wiki 文档：查找原始 Wiki 内容
+    if (doc.sourceType === 'wiki' && doc.sourceId) {
+      const wikiDoc = await this.wikiDocRepo.findOne({ where: { id: doc.sourceId } });
+      if (wikiDoc) {
+        return { title: doc.title, content: wikiDoc.content, sourceType: 'wiki' };
+      }
+    }
+
+    // 上传文档：拼接所有 chunks 还原原始内容
+    const chunks = await this.chunkRepo.find({
+      where: { documentId: id },
+      order: { chunkIndex: 'ASC' },
+    });
+    const content = chunks.map((c) => c.content).join('\n\n');
+    return { title: doc.title, content, sourceType: doc.sourceType };
   }
 
   /** 删除文档（级联删除 chunks） */
@@ -141,18 +166,34 @@ export class KnowledgeService {
   /**
    * 语义检索：输入查询，返回 Top-K 相关文档片段
    */
-  async search(query: string, topK = 3): Promise<SearchResult[]> {
+  async search(query: string, topK = 5): Promise<SearchResult[]> {
     const chunks = await this.chunkRepo.find({
       relations: { document: true },
     });
 
-    if (chunks.length === 0) return [];
+    if (chunks.length === 0) {
+      this.logger.warn('知识库为空，无 chunks 可检索');
+      return [];
+    }
 
-    // 生成查询向量
-    const queryEmbedding = await this.embeddingService.embed([query]);
-    if (!queryEmbedding || queryEmbedding.length === 0) return [];
+    this.logger.log(`RAG 检索：知识库共 ${chunks.length} 个 chunks，开始生成查询向量...`);
 
-    const queryVec = queryEmbedding[0];
+    // 生成查询向量（带 10 秒超时）
+    let queryVec: number[];
+    try {
+      const embeddingPromise = this.embeddingService.embed([query]);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Embedding API 超时（10s）')), 10000),
+      );
+      const queryEmbedding = await Promise.race([embeddingPromise, timeoutPromise]);
+      if (!queryEmbedding || queryEmbedding.length === 0) return [];
+      queryVec = queryEmbedding[0];
+    } catch (err) {
+      this.logger.error(`RAG 查询向量生成失败: ${err.message}`);
+      throw err;
+    }
+
+    this.logger.log(`RAG 向量生成完成，开始计算相似度...`);
 
     // 计算余弦相似度，排序取 Top-K
     const scored = chunks
@@ -161,10 +202,24 @@ export class KnowledgeService {
         chunk,
         score: this.cosineSimilarity(queryVec, chunk.embedding),
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.score - a.score);
+
+    // 日志 Top-5 分数，方便调试检索质量
+    scored.slice(0, 5).forEach((s, i) => {
+      this.logger.log(`RAG Top-${i + 1}: score=${s.score.toFixed(4)}, chunk="${s.chunk.content.substring(0, 60)}..."`);
+    });
+
+    // 只保留相似度 >= 0.3 的结果，避免无关内容干扰
+    const MIN_SCORE = 0.3;
+    const results = scored
+      .filter((s) => s.score >= MIN_SCORE)
       .slice(0, topK);
 
-    return scored.map(({ chunk, score }) => ({
+    if (results.length === 0) {
+      this.logger.warn(`RAG 无结果达到阈值 ${MIN_SCORE}，最高分: ${scored[0]?.score.toFixed(4) || 0}`);
+    }
+
+    return results.map(({ chunk, score }) => ({
       content: chunk.content,
       title: chunk.document?.title || '未知文档',
       score,

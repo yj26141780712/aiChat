@@ -41,11 +41,13 @@ export class HistoryService {
     conversationId: string,
     role: string,
     content: string,
+    images?: string[] | null,
   ): Promise<Message> {
     const message = this.messageRepo.create({
       conversationId,
       role,
       content,
+      images: images || null,
     });
     const saved = await this.messageRepo.save(message);
 

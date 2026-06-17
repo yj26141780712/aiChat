@@ -82,6 +82,16 @@
             <span class="role-label">{{ msg.role === 'user' ? '你' : 'AI' }}</span>
 
             @if (msg.role === 'user') {
+              <!-- 用户消息图片 -->
+              @if (msg.images && msg.images.length > 0) {
+                <div class="message-images">
+                  @for (img of msg.images; track $index) {
+                    <a [href]="getImageUrl(img)" target="_blank">
+                      <img [src]="getImageUrl(img)" class="msg-image" alt="上传图片" />
+                    </a>
+                  }
+                </div>
+              }
               <div class="message-content">{{ msg.content }}</div>
             } @else {
               <!-- 思考中动画 -->
@@ -135,17 +145,41 @@
 
     <!-- 输入区域 -->
     <div class="input-area">
-      <textarea
-        [ngModel]="inputText()"
-        (ngModelChange)="inputText.set($event)"
-        (keydown)="onKeydown($event)"
-        placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
-        [disabled]="isCurrentStreaming"
-        rows="1"
-      ></textarea>
-      <button (click)="sendMessage()" [disabled]="isCurrentStreaming || !inputText().trim()">
-        {{ isCurrentStreaming ? '回复中...' : '发送' }}
-      </button>
+      <!-- 图片预览区 -->
+      @if (imagePreviews().length > 0) {
+        <div class="image-preview-bar">
+          @for (preview of imagePreviews(); track $index; let i = $index) {
+            <div class="preview-item">
+              <img [src]="preview" alt="预览" />
+              <button class="preview-remove" (click)="removeImage(i)">✕</button>
+            </div>
+          }
+        </div>
+      }
+      <div class="input-row">
+        <label class="upload-btn" title="上传图片（最多5张，支持 jpg/png/gif/webp）">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            multiple
+            (change)="onFileSelect($event)"
+            [disabled]="isCurrentStreaming || selectedImages().length >= 5"
+          />
+          📎
+        </label>
+        <textarea
+          [ngModel]="inputText()"
+          (ngModelChange)="inputText.set($event)"
+          (keydown)="onKeydown($event)"
+          (paste)="onPaste($event)"
+          placeholder="输入消息... (Enter 发送, Shift+Enter 换行, 可直接粘贴图片)"
+          [disabled]="isCurrentStreaming"
+          rows="1"
+        ></textarea>
+        <button (click)="sendMessage()" [disabled]="isCurrentStreaming || isUploading() || (!inputText().trim() && selectedImages().length === 0)">
+          {{ isUploading() ? '上传中...' : (isCurrentStreaming ? '回复中...' : '发送') }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

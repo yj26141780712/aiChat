@@ -3,8 +3,10 @@ services:
     image: mysql:8.0.21
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: your-strong-password
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: chat_app
+    ports:
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:

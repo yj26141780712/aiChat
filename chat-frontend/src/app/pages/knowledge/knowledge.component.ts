@@ -17,6 +17,12 @@ export class KnowledgeComponent implements OnInit {
   isIndexing = signal(false);
   dragOver = signal(false);
 
+  /** 预览弹窗状态 */
+  previewVisible = signal(false);
+  previewTitle = signal('');
+  previewContent = signal('');
+  previewLoading = signal(false);
+
   constructor(private knowledgeService: KnowledgeService) {}
 
   ngOnInit(): void {
@@ -107,6 +113,32 @@ export class KnowledgeComponent implements OnInit {
         this.isIndexing.set(false);
       },
     });
+  }
+
+  /** 预览文档内容 */
+  openPreview(docId: string): void {
+    this.previewVisible.set(true);
+    this.previewLoading.set(true);
+    this.previewTitle.set('加载中...');
+    this.previewContent.set('');
+
+    this.knowledgeService.getPreview(docId).subscribe({
+      next: (data) => {
+        this.previewTitle.set(data.title);
+        this.previewContent.set(data.content);
+        this.previewLoading.set(false);
+      },
+      error: (err) => {
+        this.previewTitle.set('加载失败');
+        this.previewContent.set(err.error?.message || '无法获取文档内容');
+        this.previewLoading.set(false);
+      },
+    });
+  }
+
+  /** 关闭预览 */
+  closePreview(): void {
+    this.previewVisible.set(false);
   }
 
   /** 状态标签样式 */

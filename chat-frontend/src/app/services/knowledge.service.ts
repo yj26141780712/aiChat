@@ -59,4 +59,9 @@ export class KnowledgeService {
       params: { q: query, topK: topK.toString() },
     });
   }
+
+  /** 获取文档预览内容 */
+  getPreview(id: string): Observable<{ title: string; content: string; sourceType: string }> {
+    return this.http.get<{ title: string; content: string; sourceType: string }>(`${this.baseUrl}/${id}/preview`);
+  }
 }

@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 
+/** 多模态内容块 */
+export interface ContentPart {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: { url: string };
+}
+
 /** 消息接口定义 */
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | ContentPart[];
 }
 
 @Injectable()
@@ -33,40 +40,64 @@ export class ChatService {
     onThinking?: (content: string) => void,
     signal?: AbortSignal,
   ): Promise<string> {
-    const stream = await this.client.chat.completions.create(
-      {
-        model: 'qwen3.7-max',
-        messages,
-        stream: true,
-        temperature: 0.7,
-        // 开启千问3深度思考模式（与官网一致）
-        ...( { enable_thinking: true } as object),
-      },
-      signal ? { signal } : {},
+    // 检测是否包含图片，自动切换多模态模型
+    const hasImages = messages.some(
+      (m) => Array.isArray(m.content) && m.content.some((p) => p.type === 'image_url'),
     );
+    const model = hasImages ? 'qwen3.7-plus' : 'qwen3.7-max';
 
-    let fullReply = '';
-    let hasStartedContent = false;
+    // 空闲超时：30秒内无任何数据则终止
+    const IDLE_TIMEOUT_MS = 30_000;
+    const abortController = new AbortController();
+    let idleTimer: ReturnType<typeof setTimeout> = undefined!;
 
-    for await (const chunk of stream) {
-      const delta = chunk.choices?.[0]?.delta as any;
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        console.warn(`[ChatService] 流式响应超时（${IDLE_TIMEOUT_MS / 1000}s 无数据），主动终止`);
+        abortController.abort();
+      }, IDLE_TIMEOUT_MS);
+    };
 
-      // 思考内容
-      if (delta?.reasoning_content && onThinking) {
-        onThinking(delta.reasoning_content);
-      }
-
-      // 实际回复内容
-      const content = delta?.content;
-      if (content) {
-        if (!hasStartedContent) {
-          hasStartedContent = true;
-        }
-        fullReply += content;
-        onChunk(content);
-      }
+    // 如果外部传入了 signal，监听它来同步取消
+    if (signal) {
+      signal.addEventListener('abort', () => abortController.abort());
     }
 
-    return fullReply;
+    resetIdleTimer(); // 启动计时器
+
+    try {
+      const stream = await this.client.chat.completions.create(
+        {
+          model,
+          messages: messages as any,
+          stream: true,
+          temperature: 0.7,
+          ...({ enable_thinking: true, thinking_budget: 10000 } as object),
+        },
+        { signal: abortController.signal },
+      );
+
+      let fullReply = '';
+
+      for await (const chunk of stream) {
+        resetIdleTimer(); // 每次收到数据重置计时器
+        const delta = chunk.choices?.[0]?.delta as any;
+
+        if (delta?.reasoning_content && onThinking) {
+          onThinking(delta.reasoning_content);
+        }
+
+        const content = delta?.content;
+        if (content) {
+          fullReply += content;
+          onChunk(content);
+        }
+      }
+
+      return fullReply;
+    } finally {
+      clearTimeout(idleTimer);
+    }
   }
 }

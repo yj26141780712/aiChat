@@ -75,6 +75,12 @@ export class KnowledgeController {
     );
   }
 
+  /** 获取文档预览内容 */
+  @Get(':id/preview')
+  async preview(@Param('id') id: string) {
+    return this.knowledgeService.getPreview(id);
+  }
+
   /** 删除知识库文档 */
   @Delete(':id')
   async delete(@Param('id') id: string) {
