@@ -6,7 +6,7 @@ import os
 client: OpenAI = OpenAI(
     # 如果没有配置环境变量，请用阿里云百炼 API Key 替换：api_key="sk-xxx"
     # api_key=os.getenv("DASHSCOPE_API_KEY"),
-    api_key="sk-25f7a2ba21d646eb8fb51edd26eecb50",
+    api_key="sk-#",
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
 )
 

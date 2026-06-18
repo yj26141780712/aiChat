@@ -73,7 +73,7 @@ SMTP_PASS=MTdtiqmFitETJZPJ
 FRONTEND_URL=http://your-server-ip
 CORS_ORIGIN=http://your-server-ip
 PORT=3000
-DASHSCOPE_API_KEY=sk-25f7a2ba21d646eb8fb51edd26eecb50
+DASHSCOPE_API_KEY=sk-#
 ```
 
 ## Task 3: 创建 Docker 文件

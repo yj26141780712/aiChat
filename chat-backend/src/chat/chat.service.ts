@@ -21,7 +21,7 @@ export class ChatService {
   constructor() {
     this.client = new OpenAI({
       // 使用阿里云百炼 DashScope 兼容接口
-      apiKey: process.env.DASHSCOPE_API_KEY || 'sk-25f7a2ba21d646eb8fb51edd26eecb50',
+      apiKey: process.env.DASHSCOPE_API_KEY || 'sk-#',
       baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     });
   }

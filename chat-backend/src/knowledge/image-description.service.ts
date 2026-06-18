@@ -14,7 +14,7 @@ export class ImageDescriptionService {
 
   constructor() {
     this.client = new OpenAI({
-      apiKey: process.env.DASHSCOPE_API_KEY || 'sk-25f7a2ba21d646eb8fb51edd26eecb50',
+      apiKey: process.env.DASHSCOPE_API_KEY || 'sk-#',
       baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     });
   }
