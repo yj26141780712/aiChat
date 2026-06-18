@@ -60,8 +60,15 @@ export class KnowledgeService {
     });
   }
 
-  /** 获取文档预览内容 */
-  getPreview(id: string): Observable<{ title: string; content: string; sourceType: string }> {
-    return this.http.get<{ title: string; content: string; sourceType: string }>(`${this.baseUrl}/${id}/preview`);
+  /** 获取文档预览信息 */
+  getPreview(id: string): Observable<{ 
+    title: string; 
+    sourceType: string;
+    content?: string; // Wiki 文档的文本内容
+    fileType?: string;
+    originalName?: string;
+    filePath?: string; // 上传文件的访问路径
+  }> {
+    return this.http.get<any>(`${this.baseUrl}/${id}/preview`);
   }
 }

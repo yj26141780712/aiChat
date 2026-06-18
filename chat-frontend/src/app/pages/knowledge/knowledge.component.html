@@ -84,8 +84,25 @@
       <div class="preview-body">
         @if (previewLoading()) {
           <div class="preview-loading">加载中...</div>
-        } @else {
+        } @else if (previewFileType() === 'text') {
+          <!-- Wiki 文档：显示文本 -->
           <pre class="preview-content">{{ previewContent() }}</pre>
+        } @else if (previewFileUrl()) {
+          <!-- 上传文件：嵌入预览 -->
+          @if (previewFileType() === 'pdf') {
+            <app-pdf-viewer [src]="previewFileUrl()" />
+          } @else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(previewFileType() || '')) {
+            <img [src]="previewFileUrl()" class="preview-image" [alt]="previewOriginalName()" />
+          } @else if (['txt', 'md'].includes(previewFileType() || '')) {
+            <pre class="preview-content">{{ previewContent() }}</pre>
+          } @else {
+            <div class="preview-download">
+              <p>该文件格式暂不支持在线预览</p>
+              <a [href]="previewFileUrl()" download class="download-btn">下载文件</a>
+            </div>
+          }
+        } @else {
+          <div class="preview-empty">无内容可预览</div>
         }
       </div>
     </div>

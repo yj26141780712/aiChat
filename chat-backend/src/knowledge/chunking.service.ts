@@ -6,6 +6,14 @@ export interface TextChunk {
   index: number;
 }
 
+/** 图片信息 */
+export interface ImageInfo {
+  /** 图片路径或 base64 */
+  path: string;
+  /** AI 生成的图片描述 */
+  description: string;
+}
+
 @Injectable()
 export class ChunkingService {
   /**
@@ -60,5 +68,15 @@ export class ChunkingService {
     }
 
     return chunks;
+  }
+
+  /**
+   * 处理图片：生成描述文本作为独立 chunk
+   * @param imageInfo 图片路径和描述
+   * @returns 图片描述 chunk
+   */
+  createImageChunk(imageInfo: ImageInfo): TextChunk {
+    const content = `[图片]\n${imageInfo.description}`;
+    return { content, index: -1 }; // index 由调用方设置
   }
 }

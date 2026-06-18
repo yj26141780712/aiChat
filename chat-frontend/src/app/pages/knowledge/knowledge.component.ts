@@ -3,11 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe, UpperCasePipe } from '@angular/common';
 import { KnowledgeService, KnowledgeDoc } from '../../services/knowledge.service';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { PdfViewerComponent } from '../../components/pdf-viewer/pdf-viewer.component';
+import { PdfImageExtractor, ExtractedImage } from '../../utils/pdf-image-extractor';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-knowledge',
   standalone: true,
-  imports: [FormsModule, DatePipe, UpperCasePipe, NavbarComponent],
+  imports: [FormsModule, DatePipe, UpperCasePipe, NavbarComponent, PdfViewerComponent],
   templateUrl: './knowledge.component.html',
   styleUrl: './knowledge.component.css',
 })
@@ -22,6 +25,13 @@ export class KnowledgeComponent implements OnInit {
   previewTitle = signal('');
   previewContent = signal('');
   previewLoading = signal(false);
+  
+  // 文件预览相关
+  previewFileType = signal<string | null>(null);
+  previewFileUrl = signal<string>('');
+  previewOriginalName = signal<string>('');
+
+  private pdfExtractor = new PdfImageExtractor();
 
   constructor(private knowledgeService: KnowledgeService) {}
 
@@ -64,29 +74,67 @@ export class KnowledgeComponent implements OnInit {
   }
 
   /** 批量上传文件 */
-  uploadFiles(files: File[]): void {
+  async uploadFiles(files: File[]): Promise<void> {
     this.isUploading.set(true);
     let completed = 0;
     let hasError = false;
 
-    files.forEach((file) => {
-      this.knowledgeService.uploadFile(file).subscribe({
-        next: () => {
-          completed++;
-          if (completed === files.length) {
-            this.isUploading.set(false);
-            this.loadDocuments();
+    for (const file of files) {
+      try {
+        // 如果是 PDF，先提取图片
+        if (file.type === 'application/pdf') {
+          console.log(`检测到 PDF 文件: ${file.name}，开始提取图片...`);
+          
+          try {
+            const images = await this.pdfExtractor.extractImages(file);
+            console.log(`从 ${file.name} 提取了 ${images.length} 张图片`);
+            
+            // 先上传图片
+            if (images.length > 0) {
+              for (const img of images) {
+                await this.uploadImage(img.blob, img.filename);
+              }
+              console.log(`${images.length} 张图片已上传到知识库`);
+            }
+          } catch (err: any) {
+            console.warn(`PDF 图片提取失败: ${err.message}`);
           }
-        },
-        error: (err) => {
-          console.error('上传失败:', err);
-          hasError = true;
-          completed++;
-          if (completed === files.length) {
-            this.isUploading.set(false);
-            this.loadDocuments();
-          }
-        },
+        }
+        
+        // 上传原始文件（文本部分）
+        await new Promise<void>((resolve, reject) => {
+          this.knowledgeService.uploadFile(file).subscribe({
+            next: () => resolve(),
+            error: (err) => reject(err),
+          });
+        });
+        
+        completed++;
+      } catch (err) {
+        console.error(`上传失败: ${file.name}`, err);
+        hasError = true;
+        completed++;
+      }
+    }
+
+    // 所有文件处理完成后刷新列表
+    this.isUploading.set(false);
+    this.loadDocuments();
+    
+    if (!hasError) {
+      console.log('所有文件上传完成');
+    }
+  }
+
+  /** 上传图片到知识库 */
+  private async uploadImage(blob: Blob, filename: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // 将 Blob 转为 File 对象
+      const imageFile = new File([blob], filename, { type: blob.type });
+      
+      this.knowledgeService.uploadFile(imageFile).subscribe({
+        next: () => resolve(),
+        error: (err) => reject(err),
       });
     });
   }
@@ -121,11 +169,42 @@ export class KnowledgeComponent implements OnInit {
     this.previewLoading.set(true);
     this.previewTitle.set('加载中...');
     this.previewContent.set('');
+    this.previewFileType.set(null);
+    this.previewFileUrl.set('');
+    this.previewOriginalName.set('');
 
     this.knowledgeService.getPreview(docId).subscribe({
       next: (data) => {
         this.previewTitle.set(data.title);
-        this.previewContent.set(data.content);
+        
+        // Wiki 文档：显示文本内容
+        if (data.sourceType === 'wiki') {
+          this.previewContent.set(data.content || '');
+          this.previewFileType.set('text');
+        } else {
+          // 上传文档：显示文件预览
+          this.previewFileType.set(data.fileType || null);
+          this.previewOriginalName.set(data.originalName || data.title);
+                  
+          if (data.filePath) {
+            const fullUrl = `${environment.apiBase}${data.filePath}`;
+            this.previewFileUrl.set(fullUrl);
+          }
+                  
+          // txt/md 文件：直接获取文件文本内容
+          if (data.fileType === 'txt' || data.fileType === 'md') {
+            if (data.content) {
+              this.previewContent.set(data.content);
+            } else if (data.filePath) {
+              // 通过 HTTP 获取文件文本
+              fetch(`${environment.apiBase}${data.filePath}`)
+                .then(r => r.text())
+                .then(text => this.previewContent.set(text))
+                .catch(() => this.previewContent.set('文件内容加载失败'));
+            }
+          }
+        }
+        
         this.previewLoading.set(false);
       },
       error: (err) => {

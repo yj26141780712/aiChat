@@ -1,0 +1,15 @@
+# 1. 为nvme0n2创建分区（用gpt分区表）
+sudo parted /dev/nvme0n2 mklabel gpt
+
+# 2. 创建ext4分区
+sudo parted /dev/nvme0n2 mkpart primary ext4 0% 100%
+
+# 3. 格式化分区
+sudo mkfs.ext4 /dev/nvme0n2p1
+
+# 4. 创建挂载点并挂载
+sudo mkdir -p /mnt/data
+sudo mount /dev/nvme0n2p1 /mnt/data
+
+# 5. 设置开机自动挂载（可选）
+echo "/dev/nvme0n2p1 /mnt/data ext4 defaults 0 0" | sudo tee -a /etc/fstab

@@ -18,6 +18,10 @@ async function bootstrap() {
   if (!existsSync(uploadsDir)) {
     mkdirSync(uploadsDir, { recursive: true });
   }
+  const knowledgeDir = join(__dirname, '..', 'uploads', 'knowledge');
+  if (!existsSync(knowledgeDir)) {
+    mkdirSync(knowledgeDir, { recursive: true });
+  }
 
   // 静态文件服务：让 /uploads/xxx.jpg 可被访问
   app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads' });

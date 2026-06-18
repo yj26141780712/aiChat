@@ -6,6 +6,7 @@ import { KnowledgeChunk } from './entities/knowledge-chunk.entity';
 import { Document as WikiDocument } from '../wiki/entities/document.entity';
 import { EmbeddingService } from './embedding.service';
 import { ChunkingService } from './chunking.service';
+import { ImageDescriptionService } from './image-description.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -30,6 +31,7 @@ export class KnowledgeService {
     private wikiDocRepo: Repository<WikiDocument>,
     private embeddingService: EmbeddingService,
     private chunkingService: ChunkingService,
+    private imageDescriptionService: ImageDescriptionService,
   ) {}
 
   /** 获取所有知识库文档 */
@@ -39,32 +41,58 @@ export class KnowledgeService {
     });
   }
 
-  /** 获取文档预览内容（拼接所有 chunks） */
-  async getPreview(id: string): Promise<{ title: string; content: string; sourceType: string }> {
+  /** 获取文档预览信息（用于原始文件预览） */
+  async getPreview(id: string): Promise<{ 
+    title: string; 
+    sourceType: string;
+    fileType?: string;
+    originalName?: string;
+    filePath?: string; // 上传文件的相对路径
+  }> {
     const doc = await this.docRepo.findOne({ where: { id } });
     if (!doc) throw new NotFoundException('知识库文档不存在');
 
-    // Wiki 文档：查找原始 Wiki 内容
+    // Wiki 文档：返回 Wiki 原始内容
     if (doc.sourceType === 'wiki' && doc.sourceId) {
       const wikiDoc = await this.wikiDocRepo.findOne({ where: { id: doc.sourceId } });
       if (wikiDoc) {
-        return { title: doc.title, content: wikiDoc.content, sourceType: 'wiki' };
+        return { 
+          title: doc.title, 
+          sourceType: 'wiki',
+          content: wikiDoc.content, // Wiki 仍返回文本
+        } as any;
       }
     }
 
-    // 上传文档：拼接所有 chunks 还原原始内容
-    const chunks = await this.chunkRepo.find({
-      where: { documentId: id },
-      order: { chunkIndex: 'ASC' },
-    });
-    const content = chunks.map((c) => c.content).join('\n\n');
-    return { title: doc.title, content, sourceType: doc.sourceType };
+    // 上传文档：返回文件路径和元数据
+    return {
+      title: doc.title,
+      sourceType: doc.sourceType,
+      fileType: doc.fileType,
+      originalName: doc.originalName,
+      // 构建文件访问 URL（假设文件在 uploads/knowledge/ 目录）
+      filePath: doc.fileType ? `/uploads/knowledge/${id}.${doc.fileType}` : undefined,
+    };
   }
 
-  /** 删除文档（级联删除 chunks） */
+  /** 删除文档（级联删除 chunks + 原始文件） */
   async delete(id: string): Promise<void> {
     const doc = await this.docRepo.findOne({ where: { id } });
     if (!doc) throw new NotFoundException('知识库文档不存在');
+
+    // 删除原始文件副本
+    if (doc.fileType && doc.sourceType === 'upload') {
+      const filePath = path.join(process.cwd(), 'uploads', 'knowledge', `${id}.${doc.fileType}`);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          this.logger.log(`已删除原始文件: ${filePath}`);
+        }
+      } catch (err) {
+        this.logger.warn(`删除原始文件失败: ${err.message}`);
+      }
+    }
+
     await this.docRepo.remove(doc);
   }
 
@@ -89,6 +117,16 @@ export class KnowledgeService {
     await this.docRepo.save(doc);
 
     try {
+      // 保存原始文件副本到 uploads/knowledge/ 目录（用于预览）
+      const uploadDir = path.join(process.cwd(), 'uploads', 'knowledge');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      const destPath = path.join(uploadDir, `${doc.id}.${fileType}`);
+      fs.copyFileSync(filePath, destPath);
+      this.logger.log(`原始文件已保存到: ${destPath}`);
+
       const text = await this.extractText(filePath, fileType);
       await this.indexText(doc, text);
       doc.status = 'ready';
@@ -276,7 +314,7 @@ export class KnowledgeService {
     }
 
     const chunks = this.chunkingService.split(text);
-    this.logger.log(`文档 "${doc.title}" 分为 ${chunks.length} 块`);
+    this.logger.log(`文档 "${doc.title}" 分为 ${chunks.length} 个文本块`);
 
     // 批量生成向量
     const embeddings = await this.embeddingService.embed(
@@ -294,7 +332,84 @@ export class KnowledgeService {
       await this.chunkRepo.save(chunkEntity);
     }
 
-    this.logger.log(`文档 "${doc.title}" 索引完成`);
+    this.logger.log(`文档 "${doc.title}" 索引完成（共 ${chunks.length} 个文本块）`);
+  }
+
+  /**
+   * 对带图片的文档进行分块 + 向量化 + 存储
+   * @param doc 知识库文档
+   * @param text 文本内容
+   * @param imagePaths 图片路径列表（相对于 uploads/ 目录）
+   */
+  private async indexTextWithImages(
+    doc: KnowledgeDocument,
+    text: string,
+    imagePaths: string[],
+  ): Promise<void> {
+    if (!text && imagePaths.length === 0) {
+      this.logger.warn(`文档 "${doc.title}" 内容为空且无图片，跳过索引`);
+      return;
+    }
+
+    let chunkIndex = 0;
+
+    // 1. 处理文本 chunks
+    if (text && text.trim().length > 0) {
+      const textChunks = this.chunkingService.split(text);
+      this.logger.log(`文档 "${doc.title}" 分为 ${textChunks.length} 个文本块`);
+
+      const embeddings = await this.embeddingService.embed(
+        textChunks.map((c) => c.content),
+      );
+
+      for (let i = 0; i < textChunks.length; i++) {
+        const chunkEntity = this.chunkRepo.create({
+          documentId: doc.id,
+          content: textChunks[i].content,
+          embedding: embeddings[i],
+          chunkIndex: chunkIndex++,
+        });
+        await this.chunkRepo.save(chunkEntity);
+      }
+    }
+
+    // 2. 处理图片：生成描述并作为独立 chunk
+    if (imagePaths.length > 0) {
+      this.logger.log(`开始处理 ${imagePaths.length} 张图片...`);
+      
+      for (const imagePath of imagePaths) {
+        try {
+          // 调用 qwen-vl-max 生成图片描述
+          const description = await this.imageDescriptionService.describeImage(imagePath);
+          
+          if (description) {
+            // 将图片描述作为独立 chunk 存入知识库
+            const imageChunk = this.chunkingService.createImageChunk({
+              path: imagePath,
+              description,
+            });
+
+            const embedding = await this.embeddingService.embed([imageChunk.content]);
+            
+            const chunkEntity = this.chunkRepo.create({
+              documentId: doc.id,
+              content: imageChunk.content,
+              embedding: embedding[0],
+              chunkIndex: chunkIndex++,
+            });
+            await this.chunkRepo.save(chunkEntity);
+            
+            this.logger.log(`图片 ${imagePath} 描述已索引`);
+          } else {
+            this.logger.warn(`图片 ${imagePath} 描述生成失败`);
+          }
+        } catch (err) {
+          this.logger.error(`处理图片 ${imagePath} 失败: ${err.message}`);
+        }
+      }
+    }
+
+    this.logger.log(`文档 "${doc.title}" 索引完成（共 ${chunkIndex} 个块，含 ${imagePaths.length} 个图片块）`);
   }
 
   /** 余弦相似度 */
